@@ -25,7 +25,7 @@ Counts each of the 8 neighbors individually and applies the standard Conway's Ga
 3. Any live cell with more than 3 live neighbors dies (overpopulation).
 4. Any dead cell with exactly 3 live neighbors becomes alive (reproduction).
 
-### Integer Convolution (`stepConvolution`)
+### Convolution (`stepConvolution`)
 Convolves the grid with a weighted kernel:
 
 ```
@@ -50,10 +50,10 @@ Neighbors are weighted 2, the center cell is weighted 1. The convolution sum enc
 | **Alive + 3 neighbors = survives**     | Alive | 3         | **2*3 + 1 = 7**         | ✅      |
 | Alive + 4 neighbors = dies             | Alive | 4         | 2*4 + 1 = 9             | ❌      |
 
-Only sums of 5, 6, and 7 produce a live cell — matching the traditional rules exactly.
+Only sums of 5, 6, and 7 produce a live cell — matching the traditional rules.
 
 ### FFT Convolution (`stepFFT` / `step_fft`)
-Uses the same kernel as the integer convolution. Pre-computes the FFT of the kernel once, then each step forward-FFTs the grid, multiplies element-wise with the kernel FFT, and inverse-FFTs back. The result is thresholded at 4.5-7.5 (halfway between the discrete sums) to give room for floating-point imprecision from the FFT. Efficient for large grids.
+Pre-computes the FFT of the kernel once, then each step forward-FFTs the grid, multiplies element-wise with the kernel FFT, and inverse-FFTs back. The result is thresholded at 4.5-7.5 (halfway between the discrete sums) to give room for floating-point imprecision from the FFT.
 
 ---
 
@@ -67,7 +67,7 @@ go run main.go 100   # visual simulation on 100x100 grid
 
 ## go_conv_bench
 
-Runs traditional and integer convolution side-by-side on a variable-size square grid. Both methods start from the same random seed and step in lockstep. Each iteration the results are compared to verify the convolution approach produces identical output to the traditional rules. In visual mode it renders both grids; in bench mode it reports per-iteration timing and match status.
+Runs traditional and integer convolution side-by-side on a variable-size square grid. Both methods start from the same random seed. Each iteration the results are compared to verify the convolution approach produces identical output to the traditional rules. In visual mode it renders both grids; in bench mode it reports per-iteration timing and match status.
 
 ```
 go run main.go 100              # visual side-by-side comparison on 100x100 grid
@@ -76,7 +76,7 @@ go run main.go 100 bench 10000  # benchmark 10000 iterations on 100x100 grid
 
 ## go_conv_fft_bench
 
-Same side-by-side correctness verification but using FFT-accelerated convolution on variable-size grids (must be power of 2). Uses [`gonum/dsp/fourier`](https://pkg.go.dev/gonum.org/v1/gonum/dsp/fourier) for the 2D FFT — `fourier.NewFFT` (real) for row transforms and `fourier.NewCmplxFFT` for column transforms, following gonum's standard 2D pattern with the reduced `n/2+1` coefficient representation. The kernel FFT is pre-computed once, then each step does a forward FFT of the grid, element-wise multiply, and inverse FFT. The grid is stored as a flat boolean slice in row-major order.
+Same side-by-side correctness verification but using FFT-accelerated convolution on variable-size grids (must be power of 2). Uses [`gonum/dsp/fourier`](https://pkg.go.dev/gonum.org/v1/gonum/dsp/fourier) for the 2D FFT — `fourier.NewFFT` (real) for row transforms and `fourier.NewCmplxFFT` for column transforms, following gonum's example FFT2. The kernel FFT is pre-computed once, then each step does a forward FFT of the grid, element-wise multiply, and inverse FFT.
 
 ```
 go run main.go 256              # visual simulation on 256x256
@@ -96,7 +96,7 @@ python main.py --manual   # visual simulation (manual convolution)
 
 ## py_conv_fft_bench
 
-Python port of go_conv_fft_bench. Runs FFT convolution and traditional methods side-by-side on variable-size grids, verifying 1:1 match each iteration. The traditional step uses `np.roll` to shift the grid in all 8 directions and sum neighbors, avoiding slow Python loops. The FFT step uses [`numpy.fft.fft2`/`ifft2`](https://numpy.org/doc/stable/reference/routines.fft.html). Both operate on flat numpy boolean arrays.
+Python version of go_conv_fft_bench. Runs FFT convolution and traditional methods side-by-side, checking if they match each iteration. The FFT step uses [`numpy.fft.fft2`/`ifft2`](https://numpy.org/doc/stable/reference/routines.fft.html).
 
 ```
 python main.py 256             # visual simulation on 256x256
